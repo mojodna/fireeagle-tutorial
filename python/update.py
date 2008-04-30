@@ -9,7 +9,7 @@ import settings
 
 # Die if we haven't authorized
 if not path.exists( settings.AUTH_FILE ):
-    print 'You need to authorize with Fire Eagleby running authorize.py.'
+    print 'You need to authorize with Fire Eagle by running authorize.py.'
     exit()
 
 def pause( prompt='hit to continue' ):
@@ -41,4 +41,4 @@ else:
     exit()
 
 # Perform the update
-fe.update( access_token, place_id=update_location['place_id'] )
+fe.update( access_token, woeid=update_location['woeid'] )

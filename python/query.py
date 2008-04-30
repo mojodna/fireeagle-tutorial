@@ -9,7 +9,7 @@ import settings
 
 # Die if we haven't authorized
 if not path.exists( settings.AUTH_FILE ):
-    print 'You need to authorize with Fire Eagleby running authorize.py.'
+    print 'You need to authorize with Fire Eagle by running authorize.py.'
     exit()
 
 fe = FireEagle( settings.CONSUMER_KEY, settings.CONSUMER_SECRET )
@@ -21,14 +21,14 @@ try:
 finally:
     token_file.close()
 
-# Get the heirarchy
+# Get the hierarchy
 # NOTE: We're hacking past the user's token here to get straight to 
 # the meat of location
-user_heirarchy = fe.user( access_token )[0]['location']
+user_hierarchy = fe.user( access_token )[0]['location']
 
 # Do some list jiggering to format the locations into a pretty state
-user_heirarchy_names = [
+user_hierarchy_names = [
         location['level_name'] + ': ' + location['name']
-        for location in user_heirarchy
+        for location in user_hierarchy
     ]
-print "\n".join( user_heirarchy_names )
+print "\n".join( user_hierarchy_names )

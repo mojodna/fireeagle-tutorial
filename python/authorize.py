@@ -16,17 +16,22 @@ def pause( prompt='hit to continue' ):
 
 fe = FireEagle( settings.CONSUMER_KEY, settings.CONSUMER_SECRET )
 
+## Step 1 - Get a request token
+
 request_token = fe.request_token()
 
-# Have the user allow us access
+## Step 2 - Ask the user to authorize the application, using that request token
+
 auth_url      = fe.authorize( request_token )
 print auth_url
 pause( 'Please authorize the app at that URL' )
 
-# Exchange our request token for an access token
+## Step 3 - Convert the request token into an access token
+
 access_token  = fe.access_token( request_token )
 
-# Save the access token for later use
+## (Step 4 - save the access token)
+
 token_file = open( settings.AUTH_FILE, 'w' )
 try:
     pickle.dump( access_token, token_file )
