@@ -141,7 +141,7 @@ def date(s):
     """, s, re.VERBOSE
     ).groups()
     bits = [bit for bit in bits if bit is not None]
-    
+
     # TODO: Generate fixed-offset tzinfo
     return datetime.datetime(*map(int, bits))
 
@@ -251,13 +251,13 @@ class FireEagleAccumulator:
     def __init__( self, fireeagle_obj, name ):
         self.fireeagle_obj = fireeagle_obj
         self.name          = name
-    
+
     def __repr__( self ):
         return self.name
-    
+
     def __call__( self, *args, **kw ):
         return self.fireeagle_obj.call_method( self.name, *args, **kw )
-    
+
 
 class FireEagle:
     def __init__( self, consumer_key, consumer_secret ):
@@ -265,31 +265,31 @@ class FireEagle:
         self.consumer_key     = consumer_key
         self.consumer_secret  = consumer_secret
         self.oauth_consumer   = oauth.OAuthConsumer(
-            self.consumer_key, 
+            self.consumer_key,
             self.consumer_secret
         )
         self.signature_method = oauth.OAuthSignatureMethod_HMAC_SHA1()
         self.http_connection  = httplib.HTTPSConnection( API_SERVER )
-        
+
         # Prepare the accumulators for each method
         for method, _ in FIREEAGLE_METHODS.items():
             if not hasattr( self, method ):
                 setattr( self, method, FireEagleAccumulator( self, method ))
-    
+
     def fetch_response( self, http_method, url, \
             body = None, headers = None ):
         """Pass a request to the server and return the response as a string"""
-        
+
         # Prepare the request
         if ( body is not None ) or ( headers is not None ):
             self.http_connection.request( http_method, url, body, headers )
         else:
             self.http_connection.request( http_method, url )
-        
+
         # Get the response
         response      = self.http_connection.getresponse()
         response_body = response.read()
-        
+
         # If we've been informed of an error, raise it
         if ( 200 != response.status ):
             # Try to get the error message
@@ -298,7 +298,7 @@ class FireEagle:
                 response_errors = error_dom.getElementsByTagName( 'err' )
             except: # TODO: Naked except: make this explicit!
                 response_errors = None
-            
+
             # If we can't get the error message, just raise a generic one
             if response_errors:
                 msg = SPECIFIED_ERROR_EXCEPTION.substitute( \
@@ -308,22 +308,22 @@ class FireEagle:
             else:
                 msg = UNSPECIFIED_ERROR_EXCEPTION.substitute( \
                     status = response.status )
-            
+
             raise FireEagleException, msg
-        
+
         # Return the body of the response
         return response_body
-    
+
     def build_return( self, dom_element, target_element_name, conversions):
         results = []
         for node in dom_element.getElementsByTagName( target_element_name ):
             data = {}
-            
+
             for key, conversion in conversions.items():
                 node_key      = key.replace( '_', '-' )
                 key           = key.replace( ':', '_' )
                 data_elements = node.getElementsByTagName( node_key )
-                
+
                 # If conversion is a tuple, call build_return again
                 if isinstance( conversion, tuple ):
                     child_element, child_conversions = conversion
@@ -331,7 +331,7 @@ class FireEagle:
                         node, child_element, child_conversions \
                     )
                 else:
-                    # If we've got multiple elements, build a 
+                    # If we've got multiple elements, build a
                     # list of conversions
                     if data_elements and ( len( data_elements ) > 1 ):
                         data_item = []
@@ -349,29 +349,29 @@ class FireEagle:
                         data_item = conversion( \
                             node.getAttribute( node_key ) \
                         )
-                    
+
                     if data_item is not None:
                         data[key] = data_item
-            
+
             results.append( data )
-        
+
         return results
-    
+
     def call_method( self, method, *args, **kw ):
-        
+
         # Theoretically, we might want to do 'does this method exits?' checks
         # here, but as all the aggregators are being built in __init__(),
         # we actually don't need to: Python handles it for us.
         meta = FIREEAGLE_METHODS[method]
-        
+
         if args:
-            # Positional arguments are mapped to meta['required'] 
+            # Positional arguments are mapped to meta['required']
             # and meta['optional'] in order of specification of those
             # (with required first, obviously)
             names = meta['required'] + meta['optional']
             for i in range( len( args ) ):
                 kw[names[i]] = args[i]
-        
+
         # Check we have all required arguments
         if len( set( meta['required'] ) - set( kw.keys() ) ) > 0:
             raise FireEagleException, \
@@ -379,7 +379,7 @@ class FireEagle:
                     method = method, \
                     args   = ', '.join( meta['required'] )
                 )
-        
+
         # Token shouldn't be handled as a normal arg, so strip it out
         # (but make sure we have it, even if it's None)
         if 'token' in kw:
@@ -387,7 +387,7 @@ class FireEagle:
             del kw['token']
         else:
             token = None
-        
+
         # Build and sign the oauth_request
         # NOTE: If ( token == None ), it's handled it silently
         #       when building/signing
@@ -403,16 +403,16 @@ class FireEagle:
             self.oauth_consumer,
             token
         )
-        
-        # If the return type is the request_url, simply build the URL and 
-        # return it witout executing anything    
+
+        # If the return type is the request_url, simply build the URL and
+        # return it witout executing anything
         if 'request_url' == meta['returns']:
-            # HACK: Don't actually want to point users to yahooapis.com, so 
+            # HACK: Don't actually want to point users to yahooapis.com, so
             #       point them to fireeagle.com
             return oauth_request.to_url().replace( \
                 API_PROTOCOL + '://' + API_SERVER, \
                 FE_PROTOCOL  + '://' + FE_SERVER )
-        
+
         if 'POST' == meta['http_method']:
             response = self.fetch_response( oauth_request.http_method, \
                 oauth_request.to_url(), oauth_request.to_postdata(), \
@@ -420,21 +420,21 @@ class FireEagle:
         else:
             response = self.fetch_response( oauth_request.http_method, \
                 oauth_request.to_url() )
-        
+
         # Method returns nothing, but finished fine
         if not meta['returns']:
             return True
         # Return the oauth token
         elif 'oauth_token' == meta['returns']:
             return oauth.OAuthToken.from_string( response )
-        
+
         element, conversions = meta['returns']
         response_dom         = minidom.parseString( response )
-        
+
         results              = self.build_return( \
             response_dom, element, conversions )
-        
+
         return results
-    
+
 
 # TODO: Cached version

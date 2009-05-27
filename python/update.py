@@ -31,7 +31,7 @@ lookup_results = fe.lookup( access_token, q=argv[1] )
 if 1 < len(lookup_results):
     for i, location in enumerate( lookup_results ):
         print '%(#)d: %(name)s' % { '#': i, 'name': location['name'] }
-    
+
     chosen_location = pause( "Pick the correct location:" )
     update_location = lookup_results[int( chosen_location )]
 elif 1 == len(lookup_results):
