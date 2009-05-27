@@ -19,16 +19,19 @@ fe = FireEagle( settings.CONSUMER_KEY, settings.CONSUMER_SECRET )
 ## Step 1 - Get a request token
 
 request_token = fe.request_token()
+# Alternately, include a callback url when getting a request token
+# request_token = fe.request_token( oauth_callback="http://example.com/cb")
 
 ## Step 2 - Ask the user to authorize the application, using that request token
 
 auth_url      = fe.authorize( request_token )
+print 'Please authorize this application:'
 print auth_url
-pause( 'Please authorize the app at that URL' )
+oauth_verifier = pause( 'Please enter the verification code:' )
 
-## Step 3 - Convert the request token into an access token
+## Step 3 - Convert the request token into an access token, using the verification code that was provided
 
-access_token  = fe.access_token( request_token )
+access_token  = fe.access_token( token=request_token, oauth_verifier=oauth_verifier )
 
 ## (Step 4 - save the access token)
 
