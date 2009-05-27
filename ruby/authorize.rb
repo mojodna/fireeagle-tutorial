@@ -1,9 +1,6 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env ruby -rubygems
 
 require 'yaml'
-require 'rubygems'
-# work-around for a bug in oauth 0.2.4
-require 'oauth/helper'
 require 'fireeagle'
 
 # read the configuration
@@ -24,15 +21,19 @@ client.get_request_token
 ## Step 2 - Ask the user to authorize the application, using that request token
 
 puts "Please authorize this application:"
-puts " #{client.authorization_url}"
-print "<waiting>"
-gets
+puts "  #{client.authorization_url}"
 
-## Step 3 - Convert the request token into an access token
+## Step 3 - Get the verification code from the user
 
-client.convert_to_access_token
+puts "Please enter the verification code:"
+oauth_verifier = gets.chomp
 
-## (Step 4 - save the access token)
+## Step 4 - Convert the request token into an access token, using the
+##          verification code that the user provided
+
+client.convert_to_access_token(oauth_verifier)
+
+## (Step 5 - save the access token)
 
 config.reject! do |k,v|
   k.to_s =~ /^request_token/
